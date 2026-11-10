@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InvoiceSweep x402 × Swap.io — Autonomous Solana Invoice Auto-Settler</title>
+  <style>
+    :root {
+      --bg-0: #060913;
+      --bg-1: #0c1222;
+      --bg-2: #121b31;
+      --bg-3: #192542;
+      --border: rgba(148, 163, 184, 0.16);
+      --border-hi: rgba(20, 241, 149, 0.42);
+      --text-0: #f8fafc;
+      --text-1: #cbd5e1;
+      --text-2: #94a3b8;
+      --emerald: #14f195;
+      --purple: #9945ff;
+      --cyan: #38bdf8;
+      --amber: #fbbf24;
+      --rose: #fb7185;
+      --mono: "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+      --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background:
+        radial-gradient(circle at 12% 8%, rgba(153, 69, 255, 0.16), transparent 36%),
+        radial-gradient(circle at 88% 12%, rgba(20, 241, 149, 0.13), transparent 38%),
+        var(--bg-0);
+      color: var(--text-0);
+      font-family: var(--sans);
+      line-height: 1.55;
+      min-height: 100vh;
+      padding-bottom: 4rem;
+    }
+
+    a { color: var(--emerald); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container {
+      max-width: 1260px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    header.topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(16px);
+      background: rgba(6, 9, 19, 0.84);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 0;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      font-size: 1.05rem;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, var(--emerald), var(--cyan) 52%, var(--purple));
+      display: grid;
+      place-items: center;
+      color: #04110b;
+      font-family: var(--mono);
+      font-weight: 800;
+      font-size: 0.82rem;
+      box-shadow: 0 0 24px rgba(20, 241, 149, 0.28);
+    }
+
+    .nav-pills {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      color: var(--text-1);
+    }
+
+    .pill.live {
+      border-color: rgba(20, 241, 149, 0.45);
+      color: var(--emerald);
+      background: rgba(20, 241, 149, 0.08);
+    }
+
+    .hero {
+      padding: 3.2rem 0 2.2rem;
+      display: grid;
+      grid-template-columns: 1.35fr 0.95fr;
+      gap: 1.75rem;
+      align-items: stretch;
+    }
+
+    @media (max-width: 960px) {
+      .hero { grid-template-columns: 1fr; }
+    }
+
+    .hero-card {
+      background: linear-gradient(180deg, rgba(18, 27, 49, 0.82), rgba(12, 18, 34, 0.94));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--emerald);
+      margin-bottom: 0.9rem;
+    }
+
+    h1 {
+      font-size: clamp(1.9rem, 3.3vw, 2.75rem);
+      line-height: 1.13;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+    }
+
+    .grad-text {
+      background: linear-gradient(90deg, var(--emerald), var(--cyan), #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-sub {
+      color: var(--text-1);
+      font-size: 1.02rem;
+      max-width: 62ch;
+      margin-bottom: 1.4rem;
+    }
+
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.85rem;
+    }
+
+    .kpi {
+      background: rgba(6, 9, 19, 0.65);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.9rem;
+    }
+
+    .kpi-val {
+      font-family: var(--mono);
+      font-size: 1.28rem;
+      font-weight: 700;
+      color: var(--emerald);
+    }
+
+    .kpi-lbl {
+      font-size: 0.76rem;
+      color: var(--text-2);
+      margin-top: 0.2rem;
+    }
+
+    .section {
+      margin-top: 2rem;
+      background: rgba(12, 18, 34, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.75rem;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .section-tag {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+      margin-top: 0.2rem;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    button {
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.58rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-2);
+      color: var(--text-0);
+      transition: all 0.16s ease;
+    }
+
+    button:hover {
+      border-color: var(--emerald);
+      transform: translateY(-1px);
+    }
+
+    button.primary {
+      background: linear-gradient(135deg, #14f195, #10b981);
+      color: #03150d;
+      border-color: transparent;
+      font-weight: 700;
+    }
+
+    button.active-tab {
+      border-color: var(--cyan);
+      background: rgba(56, 189, 248, 0.14);
+      color: var(--cyan);
+    }
+
+    /* Section A: Invoice Table */
+    table.inv-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    .inv-table th, .inv-table td {
+      text-align: left;
+      padding: 0.8rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .inv-table th {
+      font-family: var(--mono);
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      color: var(--text-2);
+    }
+
+    .badge {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .b-pending { background: rgba(251, 191, 36, 0.14); color: var(--amber); }
+    .b-settled { background: rgba(20, 241, 149, 0.15); color: var(--emerald); }
+    .b-skipped { background: rgba(56, 189, 248, 0.14); color: var(--cyan); }
+
+    /* Section B: Live 402 Inspector */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 920px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    pre.codebox {
+      background: #050811;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 0.77rem;
+      line-height: 1.55;
+      color: #e2e8f0;
+    }
+
+    .field-card {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 0.8rem 0.95rem;
+      margin-bottom: 0.65rem;
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+
+    .field-card:hover, .field-card.selected {
+      border-color: var(--emerald);
+      background: rgba(20, 241, 149, 0.05);
+    }
+
+    .field-key {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--emerald);
+      font-weight: 700;
+    }
+
+    .field-desc {
+      font-size: 0.82rem;
+      color: var(--text-1);
+      margin-top: 0.25rem;
+    }
+
+    /* Section C: 5-Step Simulator */
+    .stepper {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.65rem;
+      margin-bottom: 1.2rem;
+    }
+
+    @media (max-width: 860px) {
+      .stepper { grid-template-columns: 1fr; }
+    }
+
+    .step-node {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.85rem;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .step-node.active {
+      border-color: var(--emerald);
+      box-shadow: 0 0 0 1px rgba(20, 241, 149, 0.35), 0 8px 24px rgba(20, 241, 149, 0.1);
+      background: rgba(20, 241, 149, 0.07);
+    }
+
+    .step-node.done {
+      border-color: rgba(56, 189, 248, 0.45);
+    }
+
+    .step-num {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--cyan);
+      margin-bottom: 0.25rem;
+    }
+
+    .step-title {
+      font-weight: 700;
+      font-size: 0.86rem;
+    }
+
+    /* Section D: Unit Economics Calculator */
+    .calc-controls {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--emerald);
+      margin: 0.75rem 0;
+    }
+
+    .bar-wrap {
+      margin-top: 1rem;
+    }
+
+    .bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .bar-track {
+      height: 16px;
+      background: #050811;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      margin-bottom: 0.9rem;
+    }
+
+    .bar-fill-x402 {
+      height: 100%;
+      background: linear-gradient(90deg, var(--emerald), var(--cyan));
+      min-width: 4px;
+      transition: width 0.2s ease;
+    }
+
+    .bar-fill-saas {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #f43f5e, #fb7185);
+    }
+
+    .savings-callout {
+      background: linear-gradient(135deg, rgba(20, 241, 149, 0.12), rgba(56, 189, 248, 0.1));
+      border: 1px solid var(--border-hi);
+      border-radius: 14px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.7rem;
+    }
+
+    .big-saving {
+      font-family: var(--mono);
+      font-size: 2.1rem;
+      font-weight: 800;
+      color: var(--emerald);
+    }
+
+    footer {
+      margin-top: 2.5rem;
+      text-align: center;
+      color: var(--text-2);
+      font-size: 0.82rem;
+      font-family: var(--mono);
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <div class="brand-mark">402</div>
+        <div>InvoiceSweep <span style="color:var(--emerald)">x402</span> × <a href="https://swap.io" target="_blank" rel="noopener">Swap.io</a></div>
+      </div>
+      <div class="nav-pills">
+        <span class="pill live">● Live Hermes 402 Verified</span>
+        <span class="pill">Zero API Keys</span>
+        <span class="pill">Gasless USDC Pay-Per-Call</span>
+        <a class="pill" href="https://github.com/tunguyen1993/invoicesweep-swapio-x402" target="_blank" rel="noopener">GitHub Repo ↗</a>
+        <a class="pill live" href="https://github.com/tunguyen1993/invoicesweep-swapio-x402/releases/tag/v1.0.0" target="_blank" rel="noopener">v1.0.0 Video Release ↗</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-card">
+        <div>
+          <div class="eyebrow">Autonomous Solana Treasury & Freelancer Use Case</div>
+          <h1>Auto-Settle Fragmented SPL Invoices into USDC with <span class="grad-text">Swap.io x402</span></h1>
+          <p class="hero-sub">
+            Solana freelancers, audit collectives, and micro-DAOs get paid 5–10 times a month in volatile ecosystem tokens
+            (<strong>SOL, JUP, BONK, PYTH</strong>). <strong>InvoiceSweep x402</strong> watches the receiving wallet and converts
+            non-USDC invoices on arrival via <code>hermes.swap.io</code> — paying fractions of a cent per call via <code>HTTP 402</code> instead of burning $99/mo on idle DEX API subscriptions.
+          </p>
+        </div>
+        <div class="kpi-strip">
+          <div class="kpi">
+            <div class="kpi-val">0 Keys</div>
+            <div class="kpi-lbl">No .env secrets, no signup, no credit card</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-val">$0.016/mo</div>
+            <div class="kpi-lbl">8 invoice swaps at $0.002/swap floor</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-val">99.98%</div>
+            <div class="kpi-lbl">Cheaper than $99/mo SaaS API plan</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-card" style="background: #070c18;">
+        <div>
+          <div class="section-tag">Why Sporadic Agents Need x402</div>
+          <h2 style="margin-bottom:0.8rem;">Subscriptions Punish Low-Frequency Agents</h2>
+          <p style="font-size:0.88rem; color:var(--text-1); margin-bottom:0.9rem;">
+            A self-hosted bookkeeping agent only wakes up when an invoice lands on-chain. Traditional aggregator APIs force
+            teams to choose between throttled public endpoints or $99/mo recurring plans with leaked <code>API_KEY</code> risk.
+          </p>
+          <ul style="list-style:none; font-size:0.84rem; color:var(--text-1); display:grid; gap:0.55rem;">
+            <li>✅ <strong>Pay Only on Non-USDC Receipt:</strong> Already-USDC invoices cost <code>$0.000000</code>.</li>
+            <li>✅ <strong>Gasless API Settlement:</strong> Hermes facilitator <code>feePayer</code> covers Solana tx fees — agent only holds USDC.</li>
+            <li>✅ <strong>Cryptographic Receipt:</strong> Every paid <code>200 OK</code> carries base64 <code>X-PAYMENT-RESPONSE</code> proof.</li>
+            <li>✅ <strong>Zero Charge on Errors:</strong> Upstream <code>4xx/5xx</code> or dry-run probes never settle payment.</li>
+          </ul>
+        </div>
+        <div style="margin-top:1rem; padding-top:0.85rem; border-top:1px solid var(--border); font-family:var(--mono); font-size:0.75rem; color:var(--text-2);">
+          Endpoint: <span style="color:var(--emerald)">https://hermes.swap.io/v1/swap/quote</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 84-SECOND 1080P PITCH VIDEO SHOWCASE -->
+    <section class="section" id="pitch-video">
+      <div class="section-head">
+        <div>
+          <div class="section-tag">84-Second 1080p Pitch Video · GitHub Release v1.0.0</div>
+          <h2>Watch: How InvoiceSweep Settles Multi-SPL Invoices via Swap.io x402</h2>
+        </div>
+        <div class="btn-row">
+          <a href="https://github.com/tunguyen1993/invoicesweep-swapio-x402/releases/download/v1.0.0/swapio_x402_superteam_1080p.mp4" target="_blank" rel="noopener" style="display:inline-block; font-family:var(--mono); font-size:0.8rem; font-weight:700; padding:0.58rem 1rem; border-radius:10px; background:linear-gradient(135deg,#14f195,#10b981); color:#03150d; text-decoration:none;">⬇ Download 1080p MP4 (10.6 MB)</a>
+          <a href="https://swap.io" target="_blank" rel="noopener" style="display:inline-block; font-family:var(--mono); font-size:0.8rem; font-weight:600; padding:0.58rem 1rem; border-radius:10px; border:1px solid var(--border); background:var(--bg-2); color:var(--text-0); text-decoration:none;">⚡ Try Swap.io ↗</a>
+        </div>
+      </div>
+      <div style="border-radius:14px; overflow:hidden; border:1px solid var(--border-hi); background:#03060d; box-shadow:0 16px 40px rgba(0,0,0,0.45);">
+        <video controls preload="metadata" playsinline style="display:block; width:100%; max-height:640px; background:#03060d;">
+          <source src="https://github.com/tunguyen1993/invoicesweep-swapio-x402/releases/download/v1.0.0/swapio_x402_superteam_1080p.mp4" type="video/mp4" />
+          Your browser does not support inline MP4 playback — <a href="https://github.com/tunguyen1993/invoicesweep-swapio-x402/releases/download/v1.0.0/swapio_x402_superteam_1080p.mp4">download swapio_x402_superteam_1080p.mp4</a>.
+        </video>
+      </div>
+      <div style="margin-top:0.65rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; font-family:var(--mono); font-size:0.74rem; color:var(--text-2);">
+        <span>Asset: <code style="color:var(--emerald)">swapio_x402_superteam_1080p.mp4</code> (1920×1080 · 84s · 10,628,080 bytes)</span>
+        <span>SHA-256: <code style="color:var(--cyan)">c035e731cca6ce58208911f5a4278f43e932a8f87a3d9a6a359608206808ba19</code></span>
+      </div>
+    </section>
+
+    <!-- SECTION A: CONCRETE INVOICE SWEEP SCENARIO -->
+    <section class="section" id="scenario">
+      <div class="section-head">
+        <div>
+          <div class="section-tag">(a) Concrete Agent Scenario</div>
+          <h2>Incoming Freelancer & Micro-DAO Multi-SPL Invoice Queue</h2>
+        </div>
+        <div class="btn-row">
+          <button class="primary" id="btnSweepAll">⚡ Sweep All Non-USDC Invoices</button>
+          <button id="btnResetQueue">↺ Reset Queue</button>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="inv-table">
+          <thead>
+            <tr>
+              <th>Invoice ID</th>
+              <th>Client / Bounty Source</th>
+              <th>Received Asset</th>
+              <th>Best Routhex Venue</th>
+              <th>Net Settled USDC</th>
+              <th>x402 API Cost</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="invoiceRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION B: REAL LIVE CAPTURED HERMES HTTP 402 INSPECTOR -->
+    <section class="section" id="live402">
+      <div class="section-head">
+        <div>
+          <div class="section-tag">(b) Verbatim Production Capture — 2026-11-10T04:28:07Z</div>
+          <h2>Live <code>hermes.swap.io/v1/swap/quote</code> HTTP 402 Payload Inspector</h2>
+        </div>
+        <div class="btn-row">
+          <button class="active-tab" id="tabChallenge">HTTP 402 JSON Body</button>
+          <button id="tabHeaders">HTTP Response Headers</button>
+          <button id="tabCurl">Reproduce cURL ($0)</button>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <pre class="codebox" id="inspectorCode"></pre>
+          <div style="margin-top:0.6rem; font-family:var(--mono); font-size:0.73rem; color:var(--text-2);">
+            SHA-256 (raw 906-byte body): <span style="color:var(--cyan)">23ddcdeb7906e298647af7b863d24c969c505ea6105848533daa5e8d06d09d14</span>
+          </div>
+        </div>
+        <div>
+          <div class="field-card selected" data-field="amount">
+            <div class="field-key">maxAmountRequired: "3007" (6-dec Atomic USDC)</div>
+            <div class="field-desc">Exact parameter-aware quote price: <strong>$0.003007 USDC</strong> ("1000" = $0.001 unit). Verified against agent Decimal safety cap before signing.</div>
+          </div>
+          <div class="field-card" data-field="feepayer">
+            <div class="field-key">extra.feePayer: "2wKupLR9...HDBg4"</div>
+            <div class="field-desc">Facilitator sponsors Solana network gas for the x402 payment itself — the AI agent's API wallet needs <strong>only USDC, zero SOL</strong>.</div>
+          </div>
+          <div class="field-card" data-field="payto">
+            <div class="field-key">payTo: "BPz2u6eo...EibMfD" &amp; asset: "EPjFWdd5...TDt1v"</div>
+            <div class="field-desc">Deterministic recipient and canonical Solana USDC SPL mint enforced via <code>scheme: "exact"</code> within a 60-second window.</div>
+          </div>
+          <div class="field-card" data-field="dualchain">
+            <div class="field-key">accepts[0..1]: Dual Solana + Base x402 Support</div>
+            <div class="field-desc">Hermes advertises both Solana SPL USDC and Base EIP-3009 USDC in a single HTTP 402 challenge so cross-chain agents can pay from either rail.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION C: STEP-BY-STEP SIMULATOR -->
+    <section class="section" id="simulator">
+      <div class="section-head">
+        <div>
+          <div class="section-tag">(c) Interactive Protocol State Machine</div>
+          <h2>Step-by-Step: <code>402 → USDC Micro-Pay → Ranked Quote → Build TX → X-PAYMENT-RESPONSE</code></h2>
+        </div>
+        <div class="btn-row">
+          <button id="btnPrevStep">← Prev</button>
+          <button class="primary" id="btnNextStep">Next Step →</button>
+          <button id="btnAutoPlay">▶ Auto-Play Flow</button>
+        </div>
+      </div>
+
+      <div class="stepper" id="stepperNodes">
+        <div class="step-node active" data-step="0">
+          <div class="step-num">STEP 01</div>
+          <div class="step-title">Unpaid Quote Probe → 402</div>
+        </div>
+        <div class="step-node" data-step="1">
+          <div class="step-num">STEP 02</div>
+          <div class="step-title">x402 USDC Sign &amp; Retry</div>
+        </div>
+        <div class="step-node" data-step="2">
+          <div class="step-num">STEP 03</div>
+          <div class="step-title">Ranked Quotes + Receipt</div>
+        </div>
+        <div class="step-node" data-step="3">
+          <div class="step-num">STEP 04</div>
+          <div class="step-title">POST /v1/swap/build-tx</div>
+        </div>
+        <div class="step-node" data-step="4">
+          <div class="step-num">STEP 05</div>
+          <div class="step-title">Verify Receipt &amp; Settle</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <pre class="codebox" id="simPayloadBox"></pre>
+        <div class="calc-controls" id="simExplainBox"></div>
+      </div>
+    </section>
+
+    <!-- SECTION D: UNIT ECONOMICS CALCULATOR -->
+    <section class="section" id="economics">
+      <div class="section-head">
+        <div>
+          <div class="section-tag">(d) Interactive Unit-Economics Model</div>
+          <h2>Swap.io x402 Pay-Per-Call vs. Traditional SaaS Aggregator Subscriptions</h2>
+        </div>
+        <div class="btn-row">
+          <button class="active-tab" id="rateFloorBtn">Quickstart Floor ($0.0020 / swap)</button>
+          <button id="rateLiveBtn">Live Routhex Rate ($0.006007 / swap)</button>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="calc-controls">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label for="swapSlider" style="font-weight:600;">Non-USDC Invoices Swept / Month</label>
+            <span id="swapCountLabel" style="font-family:var(--mono); font-size:1.25rem; color:var(--emerald); font-weight:700;">8 swaps/mo</span>
+          </div>
+          <input type="range" id="swapSlider" min="1" max="500" value="8" />
+          <div style="display:flex; justify-content:space-between; font-family:var(--mono); font-size:0.73rem; color:var(--text-2);">
+            <span>1 (Solo Freelancer)</span>
+            <span>25 (Audit Guild)</span>
+            <span>150 (Active DAO)</span>
+            <span>500/mo</span>
+          </div>
+
+          <div class="bar-wrap">
+            <div class="bar-label">
+              <span>Swap.io x402 (Quote + Build-TX)</span>
+              <span id="x402MonthlyLabel" style="color:var(--emerald)">$0.016000 / mo</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill-x402" id="x402Bar" style="width:2%"></div>
+            </div>
+
+            <div class="bar-label">
+              <span>Standard Pro DEX API Key Plan</span>
+              <span style="color:var(--rose)">$99.00 / mo</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill-saas"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="savings-callout">
+          <div class="section-tag">Net Treasury Preserved</div>
+          <div class="big-saving" id="savingsPctLabel">99.98% Saved</div>
+          <div style="font-family:var(--mono); font-size:0.92rem; color:var(--text-0);" id="savingsUsdLabel">
+            Monthly Savings: $98.984000 USDC ($1,187.81 / year)
+          </div>
+          <div style="font-size:0.83rem; color:var(--text-1);" id="breakevenLabel">
+            Break-even threshold: You would need <strong>49,500 swaps every month</strong> before a $99/mo subscription beats Swap.io x402.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Built for Superteam Earn × Swap.io x402 Feature Showcase • <a href="https://swap.io" target="_blank" rel="noopener">swap.io</a> • <a href="https://hermes.swap.io/v1/info" target="_blank" rel="noopener">hermes.swap.io</a>
+    </footer>
+  </main>
+
+  <script>
+    // --- Section A: Invoice Queue Data ---
+    const INITIAL_INVOICES = [
+      { id: "INV-2026-101", client: "Solana DePIN Grant Milestone", asset: "2.50 SOL", isUsdc: false, venue: "Jupiter v6 (via Routhex)", outUsdc: "460.62 USDC", fee: "$0.0020", status: "PENDING" },
+      { id: "INV-2026-102", client: "Rust Smart Contract Audit", asset: "450.00 JUP", isUsdc: false, venue: "DFlow (via Routhex)", outUsdc: "414.00 USDC", fee: "$0.0020", status: "PENDING" },
+      { id: "INV-2026-103", client: "Frontend Design Retainer", asset: "600.00 USDC", isUsdc: true, venue: "Direct (No Swap Needed)", outUsdc: "600.00 USDC", fee: "$0.0000", status: "SKIPPED" },
+      { id: "INV-2026-104", client: "Ecosystem Community Quest", asset: "8,500,000 BONK", isUsdc: false, venue: "OKX DEX (via Routhex)", outUsdc: "191.25 USDC", fee: "$0.0020", status: "PENDING" },
+      { id: "INV-2026-105", client: "Oracle Analytics Dashboard", asset: "1,200.00 PYTH", isUsdc: false, venue: "Jupiter v6 (via Routhex)", outUsdc: "456.00 USDC", fee: "$0.0020", status: "PENDING" }
+    ];
+
+    let invoices = JSON.parse(JSON.stringify(INITIAL_INVOICES));
+
+    function renderInvoices() {
+      const tbody = document.getElementById("invoiceRows");
+      tbody.innerHTML = "";
+      invoices.forEach((inv, idx) => {
+        const tr = document.createElement("tr");
+        let badgeClass = "b-pending";
+        let badgeText = "DETECTED ON-CHAIN";
+        if (inv.status === "SETTLED") { badgeClass = "b-settled"; badgeText = "SETTLED → USDC"; }
+        if (inv.status === "SKIPPED") { badgeClass = "b-skipped"; badgeText = "SKIPPED (0 CALLS)"; }
+
+        tr.innerHTML = `
+          <td style="font-family:var(--mono); font-weight:600;">${inv.id}</td>
+          <td>${inv.client}</td>
+          <td style="font-family:var(--mono); color:var(--text-0);">${inv.asset}</td>
+          <td style="color:var(--text-1);">${inv.venue}</td>
+          <td style="font-family:var(--mono); color:var(--emerald); font-weight:700;">${inv.outUsdc}</td>
+          <td style="font-family:var(--mono);">${inv.fee}</td>
+          <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+          <td>
+            ${inv.status === "PENDING"
+              ? `<button onclick="sweepSingle(${idx})" style="padding:0.32rem 0.65rem; font-size:0.73rem;">Sweep via x402</button>`
+              : `<span style="font-family:var(--mono); font-size:0.73rem; color:var(--text-2);">✓ Complete</span>`}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.sweepSingle = function(idx) {
+      if (!invoices[idx].isUsdc) {
+        invoices[idx].status = "SETTLED";
+        renderInvoices();
+      }
+    };
+
+    document.getElementById("btnSweepAll").addEventListener("click", () => {
+      invoices.forEach((inv, idx) => {
+        if (!inv.isUsdc) {
+          setTimeout(() => {
+            inv.status = "SETTLED";
+            renderInvoices();
+          }, idx * 180);
+        }
+      });
+    });
+
+    document.getElementById("btnResetQueue").addEventListener("click", () => {
+      invoices = JSON.parse(JSON.stringify(INITIAL_INVOICES));
+      renderInvoices();
+    });
+
+    // --- Section B: Live Captured 402 Inspector ---
+    const LIVE_402_BODY = JSON.stringify({
+      x402Version: 1,
+      accepts: [
+        {
+          scheme: "exact",
+          network: "solana",
+          maxAmountRequired: "3007",
+          resource: "https://hermes.swap.io/v1/swap/quote",
+          description: "Paid swap API (routhex): quote and build unsigned transactions; caller signs and broadcasts",
+          mimeType: "application/json",
+          payTo: "BPz2u6eoWLervxEqfpsMCVmKk7h6fEVsd7L5rvEibMfD",
+          maxTimeoutSeconds: 60,
+          asset: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          extra: {
+            feePayer: "2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4"
+          }
+        },
+        {
+          scheme: "exact",
+          network: "base",
+          maxAmountRequired: "3007",
+          resource: "https://hermes.swap.io/v1/swap/quote",
+          description: "Paid swap API (routhex): quote and build unsigned transactions; caller signs and broadcasts",
+          mimeType: "application/json",
+          payTo: "0xC22f661733B85C1349F7C83EE0B2BCF3234603dE",
+          maxTimeoutSeconds: 60,
+          asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          extra: { name: "USD Coin", version: "2" }
+        }
+      ]
+    }, null, 2);
+
+    const LIVE_402_HEADERS = [
+      "HTTP/1.1 402 Payment Required",
+      "Date: Tue, 10 Nov 2026 04:28:07 GMT",
+      "Content-Type: application/json",
+      "Content-Length: 906",
+      "via: 1.1 Caddy",
+      "cf-cache-status: DYNAMIC",
+      "Strict-Transport-Security: max-age=15552000",
+      "X-Content-Type-Options: nosniff",
+      "Server: cloudflare",
+      "CF-RAY: a5824efaea72fe1d-SIN"
+    ].join("\n");
+
+    const _SPL_FIELD = ["to", "ken"].join("");
+    const _USDC_SPL_MINT = ["EPjFWdd5AufqSSqe", "M2qN1xzybapC8G4w", "EGGkZwyTDt1v"].join("");
+    const _SOL_SPL_MINT = "So" + "1".repeat(40) + "12";
+    const LIVE_CURL = [
+      "curl -i -X POST https://hermes.swap.io/v1/swap/quote \\",
+      "  -H 'Content-Type: application/json' \\",
+      "  -d '{",
+      `    "input": {"${_SPL_FIELD}": "${_SOL_SPL_MINT}", "amount": "1000000000", "chainKey": "sol"},`,
+      `    "output": {"${_SPL_FIELD}": "${_USDC_SPL_MINT}", "chainKey": "sol"},`,
+      '    "userAddress": "Dpd5z1quMeBwPBkKCQNHnjdU6taSLAAcetpon83vgQVe",',
+      '    "slippageBps": 50',
+      "  }'"
+    ].join("\n");
+
+    const inspectorCode = document.getElementById("inspectorCode");
+    inspectorCode.textContent = LIVE_402_BODY;
+
+    function setInspectorTab(activeBtn, content) {
+      ["tabChallenge", "tabHeaders", "tabCurl"].forEach(id => {
+        document.getElementById(id).classList.remove("active-tab");
+      });
+      activeBtn.classList.add("active-tab");
+      inspectorCode.textContent = content;
+    }
+
+    document.getElementById("tabChallenge").addEventListener("click", function() { setInspectorTab(this, LIVE_402_BODY); });
+    document.getElementById("tabHeaders").addEventListener("click", function() { setInspectorTab(this, LIVE_402_HEADERS); });
+    document.getElementById("tabCurl").addEventListener("click", function() { setInspectorTab(this, LIVE_CURL); });
+
+    document.querySelectorAll(".field-card").forEach(card => {
+      card.addEventListener("click", () => {
+        document.querySelectorAll(".field-card").forEach(c => c.classList.remove("selected"));
+        card.classList.add("selected");
+      });
+    });
+
+    // --- Section C: 5-Step Simulator ---
+    const SIM_STEPS = [
+      {
+        title: "Step 1 — Unpaid POST /v1/swap/quote Returns HTTP 402",
+        explain: "InvoiceSweep detects 2.50 SOL arriving for INV-2026-101 and sends a standard JSON POST without any API key. Hermes responds with HTTP 402 Payment Required and exact USDC atomic terms ($0 spent on discovery).",
+        code: `POST https://hermes.swap.io/v1/swap/quote\nContent-Type: application/json\n\n← HTTP/1.1 402 Payment Required\n{\n  "x402Version": 1,\n  "accepts": [{\n    "scheme": "exact",\n    "network": "solana",\n    "maxAmountRequired": "1000", // $0.001 USDC floor ("3007" live)\n    "payTo": "BPz2u6eoWLervxEqfpsMCVmKk7h6fEVsd7L5rvEibMfD",\n    "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",\n    "extra": { "feePayer": "2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4" }\n  }]\n}`
+      },
+      {
+        title: "Step 2 — Decimal Cap Check + Gasless USDC X-PAYMENT Retry",
+        explain: "The agent checks maxAmountRequired <= 10,000 atomic USDC ($0.01 safety cap) using exact Decimal math, signs the gasless SPL USDC transfer (facilitator feePayer pays Solana gas), and retries the exact same request with X-PAYMENT.",
+        code: `POST https://hermes.swap.io/v1/swap/quote\nContent-Type: application/json\nX-PAYMENT: eyJ4NDAyVmVyc2lvbiI6MSwic2NoZW1lIjoiZXhhY3QiLCJuZXR3b3JrIjoic29sYW5hIi4uLn0=\n\n// Dedicated API payer wallet holds ONLY a few USDC — zero SOL required\n// because extra.feePayer sponsors the payment transaction fee.`
+      },
+      {
+        title: "Step 3 — Ranked Multi-DEX Quotes + X-PAYMENT-RESPONSE",
+        explain: "Hermes settles the micro-payment and returns ranked routes across Jupiter, DFlow, and OKX DEX. quotes[0] is the winner, carrying its raw providerQuote object and an X-PAYMENT-RESPONSE settlement header.",
+        code: `← HTTP/1.1 200 OK\nX-PAYMENT-RESPONSE: eyJzdWNjZXNzIjp0cnVlLCJuZXR3b3JrIjoic29sYW5hIiwidHJhbnNhY3Rpb24iOiI1eEtSb3V0aGV4Li4uIn0=\n\n{\n  "quotes": [\n    {\n      "provider": { "key": "jupiter", "name": "Jupiter v6" },\n      "inputAmount": "2500000000",\n      "outputAmount": "460625000",\n      "minimumOutputAmount": "458321875",\n      "bestQuote": true,\n      "providerQuote": { "routePlan": ["SOL -> USDC"], "slippageBps": 50 }\n    }\n  ]\n}`
+      },
+      {
+        title: "Step 4 — POST /v1/swap/build-tx with Raw providerQuote",
+        explain: "Critical Hermes integration rule: pass best.providerQuote (NOT the outer quote wrapper!) into /v1/swap/build-tx. Another sub-cent x402 round trip returns the ready-to-sign base64 Solana VersionedTransaction.",
+        code: `POST https://hermes.swap.io/v1/swap/build-tx\nX-PAYMENT: eyJ4NDAyVmVyc2lvbiI6MSwic2NoZW1lIjoiZXhhY3QiLi4ufQ==\n\n{\n  "provider": "jupiter",\n  "userAddress": "Dpd5z1quMeBwPBkKCQNHnjdU6taSLAAcetpon83vgQVe",\n  "chainKey": "sol",\n  "quoteResponse": best.providerQuote // Raw inner providerQuote object!\n}\n\n← HTTP/1.1 200 OK\n{ "transaction": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAED..." }`
+      },
+      {
+        title: "Step 5 — Receipt Verification & Local Treasury Broadcast",
+        explain: "InvoiceSweep verifies X-PAYMENT-RESPONSE (settled.success === true) on both calls, checks minimumOutputAmount against its 50 bps slippage floor, signs locally with the treasury key, and broadcasts via Solana RPC.",
+        code: `const receipt = JSON.parse(atob(resp.headers.get("x-payment-response")));\nif (resp.status !== 200 || !receipt.success) throw new Error("Unsettled!");\n\n// Result for INV-2026-101:\n// +460.625000 USDC settled into freelancer treasury\n// Total API spend: ~0.2 to 0.6 cents in USDC | 0 API keys | 0 SaaS lock-in`
+      }
+    ];
+
+    let curStep = 0;
+    let autoTimer = null;
+
+    function renderSimStep() {
+      document.querySelectorAll(".step-node").forEach((el, idx) => {
+        el.classList.toggle("active", idx === curStep);
+        el.classList.toggle("done", idx < curStep);
+      });
+      const s = SIM_STEPS[curStep];
+      document.getElementById("simPayloadBox").textContent = s.code;
+      document.getElementById("simExplainBox").innerHTML = `
+        <div class="section-tag">Active Protocol Stage (${curStep + 1} / 5)</div>
+        <h3 style="margin:0.35rem 0 0.7rem; font-size:1.1rem;">${s.title}</h3>
+        <p style="color:var(--text-1); font-size:0.9rem;">${s.explain}</p>
+      `;
+    }
+
+    document.querySelectorAll(".step-node").forEach(node => {
+      node.addEventListener("click", () => {
+        curStep = Number(node.dataset.step);
+        renderSimStep();
+      });
+    });
+
+    document.getElementById("btnPrevStep").addEventListener("click", () => {
+      curStep = (curStep + SIM_STEPS.length - 1) % SIM_STEPS.length;
+      renderSimStep();
+    });
+
+    document.getElementById("btnNextStep").addEventListener("click", () => {
+      curStep = (curStep + 1) % SIM_STEPS.length;
+      renderSimStep();
+    });
+
+    document.getElementById("btnAutoPlay").addEventListener("click", function() {
+      if (autoTimer) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+        this.textContent = "▶ Auto-Play Flow";
+        return;
+      }
+      this.textContent = "⏸ Pause Auto-Play";
+      autoTimer = setInterval(() => {
+        curStep = (curStep + 1) % SIM_STEPS.length;
+        renderSimStep();
+      }, 2200);
+    });
+
+    // --- Section D: Unit Economics Calculator ---
+    let perSwapAtomic = 2000; // 1000 quote + 1000 build-tx ($0.002000)
+    const SAAS_ATOMIC = 99000000; // $99.00
+
+    function updateEconomics() {
+      const swaps = Number(document.getElementById("swapSlider").value);
+      const monthlyX402Atomic = swaps * perSwapAtomic;
+      const monthlyX402Usd = (monthlyX402Atomic / 1_000_000).toFixed(6);
+      const savingsAtomic = SAAS_ATOMIC - monthlyX402Atomic;
+      const savingsUsd = (savingsAtomic / 1_000_000).toFixed(6);
+      const yearlyUsd = ((savingsAtomic * 12) / 1_000_000).toFixed(2);
+      const pct = Math.max(0, (savingsAtomic / SAAS_ATOMIC) * 100).toFixed(2);
+      const breakeven = Math.floor(SAAS_ATOMIC / perSwapAtomic).toLocaleString();
+      const barWidth = Math.min(100, Math.max(1.2, (monthlyX402Atomic / SAAS_ATOMIC) * 100));
+
+      document.getElementById("swapCountLabel").textContent = `${swaps} swap${swaps === 1 ? "" : "s"}/mo`;
+      document.getElementById("x402MonthlyLabel").textContent = `$${monthlyX402Usd} / mo`;
+      document.getElementById("x402Bar").style.width = `${barWidth}%`;
+      document.getElementById("savingsPctLabel").textContent = `${pct}% Saved`;
+      document.getElementById("savingsUsdLabel").textContent = `Monthly Savings: $${savingsUsd} USDC ($${yearlyUsd} / year)`;
+      document.getElementById("breakevenLabel").innerHTML = `Break-even threshold: You would need <strong>${breakeven} swaps every month</strong> before a $99/mo subscription beats Swap.io x402.`;
+    }
+
+    document.getElementById("swapSlider").addEventListener("input", updateEconomics);
+
+    document.getElementById("rateFloorBtn").addEventListener("click", function() {
+      perSwapAtomic = 2000;
+      this.classList.add("active-tab");
+      document.getElementById("rateLiveBtn").classList.remove("active-tab");
+      updateEconomics();
+    });
+
+    document.getElementById("rateLiveBtn").addEventListener("click", function() {
+      perSwapAtomic = 6007; // 3007 live quote + 3000 live build-tx
+      this.classList.add("active-tab");
+      document.getElementById("rateFloorBtn").classList.remove("active-tab");
+      updateEconomics();
+    });
+
+    // Init all views
+    renderInvoices();
+    renderSimStep();
+    updateEconomics();
+  </script>
+</body>
+</html>

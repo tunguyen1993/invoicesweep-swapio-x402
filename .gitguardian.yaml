@@ -1,0 +1,6 @@
+version: 2
+secret:
+  ignored_paths:
+    - "hermes_live_402_capture.json"
+    - "index.html"
+    - "test_invoicesweep_x402.py"

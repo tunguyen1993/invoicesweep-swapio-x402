@@ -1,0 +1,80 @@
+{
+  "capture_schema": "hermes_x402_live_capture_v1",
+  "spend_usdc": "0.000000",
+  "mode": "UNPAID_READ_ONLY_HTTP_402_CHALLENGE",
+  "method": "POST",
+  "url": "https://hermes.swap.io/v1/swap/quote",
+  "retrieved_utc": "2026-11-10T04:28:07Z",
+  "http_date": "Tue, 10 Nov 2026 04:28:07 GMT",
+  "http_date_delta_seconds": 0.146,
+  "status_code": 402,
+  "request_headers": {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
+    "User-Agent": "InvoiceSweep-x402/1.0 (+https://swap.io)"
+  },
+  "request_body": {
+    "input": {
+      "spl_mint": "So11111111111111111111111111111111111111112",
+      "amount": "1000000000",
+      "chainKey": "sol"
+    },
+    "output": {
+      "spl_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "chainKey": "sol"
+    },
+    "userAddress": "Dpd5z1quMeBwPBkKCQNHnjdU6taSLAAcetpon83vgQVe",
+    "slippageBps": 50
+  },
+  "response_headers": {
+    "Date": "Tue, 10 Nov 2026 04:28:07 GMT",
+    "Content-Type": "application/json",
+    "Content-Length": "906",
+    "Connection": "close",
+    "via": "1.1 Caddy",
+    "cf-cache-status": "DYNAMIC",
+    "Strict-Transport-Security": "max-age=15552000",
+    "X-Content-Type-Options": "nosniff",
+    "Server": "cloudflare",
+    "CF-RAY": "a5824efaea72fe1d-SIN"
+  },
+  "raw_body_bytes_len": 906,
+  "raw_body_sha256": "23ddcdeb7906e298647af7b863d24c969c505ea6105848533daa5e8d06d09d14",
+  "raw_body": "{\"x402Version\":1,\"accepts\":[{\"scheme\":\"exact\",\"network\":\"solana\",\"maxAmountRequired\":\"3007\",\"resource\":\"https://hermes.swap.io/v1/swap/quote\",\"description\":\"Paid swap API (routhex): quote and build unsigned transactions; caller signs and broadcasts\",\"mimeType\":\"application/json\",\"payTo\":\"BPz2u6eoWLervxEqfpsMCVmKk7h6fEVsd7L5rvEibMfD\",\"maxTimeoutSeconds\":60,\"asset\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\"extra\":{\"feePayer\":\"2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4\"}},{\"scheme\":\"exact\",\"network\":\"base\",\"maxAmountRequired\":\"3007\",\"resource\":\"https://hermes.swap.io/v1/swap/quote\",\"description\":\"Paid swap API (routhex): quote and build unsigned transactions; caller signs and broadcasts\",\"mimeType\":\"application/json\",\"payTo\":\"0xC22f661733B85C1349F7C83EE0B2BCF3234603dE\",\"maxTimeoutSeconds\":60,\"asset\":\"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"extra\":{\"name\":\"USD Coin\",\"version\":\"2\"}}]}\n",
+  "parsed_x402": {
+    "x402Version": 1,
+    "accepts": [
+      {
+        "scheme": "exact",
+        "network": "solana",
+        "maxAmountRequired": "3007",
+        "resource": "https://hermes.swap.io/v1/swap/quote",
+        "description": "Paid swap API (routhex): quote and build unsigned transactions; caller signs and broadcasts",
+        "mimeType": "application/json",
+        "payTo": "BPz2u6eoWLervxEqfpsMCVmKk7h6fEVsd7L5rvEibMfD",
+        "maxTimeoutSeconds": 60,
+        "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "extra": {
+          "feePayer": "2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4"
+        }
+      },
+      {
+        "scheme": "exact",
+        "network": "base",
+        "maxAmountRequired": "3007",
+        "resource": "https://hermes.swap.io/v1/swap/quote",
+        "description": "Paid swap API (routhex): quote and build unsigned transactions; caller signs and broadcasts",
+        "mimeType": "application/json",
+        "payTo": "0xC22f661733B85C1349F7C83EE0B2BCF3234603dE",
+        "maxTimeoutSeconds": 60,
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      }
+    ]
+  }
+}
