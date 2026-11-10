@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InvoiceSweep x402: Why Autonomous Solana Bookkeeping Agents Pay Per Quote on Swap.io Instead of Buying $99/mo API Keys</title>
+  <meta name="description" content="How HTTP 402 micro-settlements on Swap.io’s Hermes API turn sporadic multi-token freelancer and Micro-DAO invoices into clean USDC — with zero API keys, zero SOL gas for payments, and 99.9%+ lower infrastructure overhead." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="InvoiceSweep x402: Why Autonomous Solana Bookkeeping Agents Pay Per Quote on Swap.io Instead of Buying $99/mo API Keys" />
+  <meta property="og:description" content="How HTTP 402 micro-settlements on Swap.io’s Hermes API turn sporadic multi-token freelancer and Micro-DAO invoices into clean USDC — with zero API keys, zero SOL gas for payments, and 99.9%+ lower infrastructure overhead." />
+  <meta property="og:url" content="https://tunguyen1993.github.io/invoicesweep-swapio-x402/article.html" />
+  <meta property="article:published_time" content="2026-11-10T07:20:00Z" />
+  <meta property="article:author" content="https://github.com/tunguyen1993" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="InvoiceSweep x402 × Swap.io — Pay-Per-Quote Solana Agent Architecture" />
+  <meta name="twitter:description" content="Why autonomous Solana bookkeeping agents pay per quote on Swap.io (hermes.swap.io) via HTTP 402 instead of burning $99/mo on idle DEX API keys." />
+  <link rel="canonical" href="https://tunguyen1993.github.io/invoicesweep-swapio-x402/article.html" />
+  <style>
+    :root {
+      --bg-page: #070b14;
+      --bg-surface: #0d1424;
+      --bg-elevated: #131d35;
+      --bg-code: #050811;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --accent-emerald: #14f195;
+      --accent-cyan: #38bdf8;
+      --accent-purple: #9945ff;
+      --border-subtle: rgba(148, 163, 184, 0.16);
+      --border-highlight: rgba(20, 241, 149, 0.42);
+      --serif: "Charter", "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+      --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --mono: "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 15% 6%, rgba(153, 69, 255, 0.12), transparent 34%),
+        radial-gradient(circle at 85% 10%, rgba(20, 241, 149, 0.10), transparent 36%),
+        var(--bg-page);
+      color: var(--text-primary);
+      font-family: var(--sans);
+      line-height: 1.72;
+      min-height: 100vh;
+      padding-bottom: 5rem;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: var(--accent-emerald);
+      text-decoration: underline;
+      text-decoration-color: rgba(20, 241, 149, 0.4);
+      text-underline-offset: 3px;
+      transition: all 0.15s ease;
+    }
+
+    a:hover {
+      color: var(--accent-cyan);
+      text-decoration-color: var(--accent-cyan);
+    }
+
+    /* Top Publication Nav */
+    header.pub-nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(16px);
+      background: rgba(7, 11, 20, 0.86);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .pub-nav-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .pub-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-weight: 700;
+      font-size: 0.98rem;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .pub-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan) 52%, var(--accent-purple));
+      color: #04110b;
+      font-family: var(--mono);
+      font-weight: 800;
+      font-size: 0.78rem;
+      display: grid;
+      place-items: center;
+    }
+
+    .pub-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .nav-btn {
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      padding: 0.42rem 0.8rem;
+      border-radius: 999px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      text-decoration: none;
+    }
+
+    .nav-btn.primary {
+      background: rgba(20, 241, 149, 0.12);
+      border-color: var(--border-highlight);
+      color: var(--accent-emerald);
+      font-weight: 600;
+    }
+
+    /* Editorial Article Container */
+    main.article-shell {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 0;
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-emerald);
+      background: rgba(20, 241, 149, 0.08);
+      border: 1px solid rgba(20, 241, 149, 0.3);
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      margin-bottom: 1.2rem;
+    }
+
+    h1.article-title {
+      font-size: clamp(1.95rem, 3.6vw, 2.75rem);
+      line-height: 1.16;
+      letter-spacing: -0.028em;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+    }
+
+    p.article-subtitle {
+      font-size: clamp(1.1rem, 2vw, 1.3rem);
+      line-height: 1.5;
+      color: var(--text-secondary);
+      font-style: italic;
+      margin-bottom: 1.75rem;
+    }
+
+    .byline-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-top: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 2.25rem;
+      flex-wrap: wrap;
+    }
+
+    .author-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #14f195, #38bdf8, #9945ff);
+      display: grid;
+      place-items: center;
+      font-family: var(--mono);
+      font-weight: 800;
+      color: #04110b;
+      font-size: 0.92rem;
+    }
+
+    .author-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+    }
+
+    .pub-details {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-family: var(--mono);
+    }
+
+    /* Prose Content */
+    .prose p {
+      font-family: var(--serif);
+      font-size: 1.16rem;
+      line-height: 1.82;
+      color: #e2e8f0;
+      margin-bottom: 1.45rem;
+    }
+
+    .prose h2 {
+      font-family: var(--sans);
+      font-size: 1.55rem;
+      line-height: 1.28;
+      letter-spacing: -0.02em;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin: 2.6rem 0 1rem;
+      padding-top: 0.5rem;
+    }
+
+    .prose h3 {
+      font-family: var(--sans);
+      font-size: 1.18rem;
+      line-height: 1.35;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin: 1.8rem 0 0.75rem;
+    }
+
+    .prose ol, .prose ul {
+      font-family: var(--serif);
+      font-size: 1.13rem;
+      line-height: 1.78;
+      color: #e2e8f0;
+      margin: 0 0 1.5rem 1.4rem;
+    }
+
+    .prose li {
+      margin-bottom: 0.7rem;
+    }
+
+    .prose code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-subtle);
+      padding: 0.15rem 0.42rem;
+      border-radius: 6px;
+      color: var(--accent-emerald);
+    }
+
+    .prose hr {
+      border: none;
+      border-top: 1px solid var(--border-subtle);
+      margin: 2.5rem 0;
+    }
+
+    /* Embedded Video Showcase Figure */
+    figure.video-embed {
+      margin: 2rem 0 2.4rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-highlight);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+    }
+
+    .video-embed-header {
+      padding: 0.85rem 1.15rem;
+      background: rgba(19, 29, 53, 0.85);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+    }
+
+    figure.video-embed video {
+      display: block;
+      width: 100%;
+      max-height: 460px;
+      background: #03060d;
+    }
+
+    figcaption {
+      padding: 0.8rem 1.15rem;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    /* Code Block */
+    .code-wrapper {
+      margin: 1.4rem 0 1.8rem;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-code);
+    }
+
+    .code-topbar {
+      padding: 0.6rem 1rem;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    pre.code-block {
+      padding: 1.15rem;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 0.83rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+    }
+
+    pre.code-block code {
+      background: none;
+      border: none;
+      padding: 0;
+      color: inherit;
+      font-size: inherit;
+    }
+
+    /* Comparison Table */
+    .table-wrap {
+      margin: 1.5rem 0 1.8rem;
+      overflow-x: auto;
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      background: var(--bg-surface);
+    }
+
+    table.cmp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--sans);
+      font-size: 0.92rem;
+    }
+
+    .cmp-table th, .cmp-table td {
+      padding: 0.9rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .cmp-table th {
+      background: var(--bg-elevated);
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+    }
+
+    .cmp-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* X Caption Box */
+    .x-caption-card {
+      margin-top: 2.5rem;
+      background: linear-gradient(180deg, rgba(19, 29, 53, 0.78), rgba(13, 20, 36, 0.95));
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 1.5rem;
+    }
+
+    .copy-btn {
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-highlight);
+      background: rgba(20, 241, 149, 0.12);
+      color: var(--accent-emerald);
+    }
+
+    .copy-btn:hover {
+      background: rgba(20, 241, 149, 0.22);
+    }
+
+    footer.article-footer {
+      margin-top: 3.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-subtle);
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <header class="pub-nav">
+    <div class="pub-nav-inner">
+      <a class="pub-brand" href="./index.html">
+        <span class="pub-badge">402</span>
+        <span>InvoiceSweep <span style="color:var(--accent-emerald)">x402</span> × Swap.io Editorial</span>
+      </a>
+      <div class="pub-actions">
+        <a class="nav-btn primary" href="./index.html">⚡ Interactive Dashboard &amp; Simulator</a>
+        <a class="nav-btn" href="https://swap.io" target="_blank" rel="noopener">Try Swap.io ↗</a>
+        <a class="nav-btn" href="https://github.com/tunguyen1993/invoicesweep-swapio-x402" target="_blank" rel="noopener">GitHub Repo ↗</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="article-shell">
+    <article class="prose">
+      <div class="kicker">Swap.io × Superteam Earn · Agent API (x402) Technical Deep Dive</div>
+      <h1 class="article-title">InvoiceSweep x402: Why Autonomous Solana Bookkeeping Agents Pay Per Quote on Swap.io Instead of Buying $99/mo API Keys</h1>
+      <p class="article-subtitle">
+        How HTTP 402 micro-settlements on Swap.io’s Hermes API turn sporadic multi-token freelancer and Micro-DAO invoices into clean USDC — with zero API keys, zero SOL gas for payments, and 99.9%+ lower infrastructure overhead.
+      </p>
+
+      <div class="byline-bar">
+        <div class="author-meta">
+          <div class="avatar">TN</div>
+          <div>
+            <div class="author-name">Tu Nguyen (<a href="https://github.com/tunguyen1993" target="_blank" rel="noopener">@tunguyen1993</a>)</div>
+            <div class="pub-details">Published Nov 10, 2026 · 5 min read · Verified Live on hermes.swap.io</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <a class="nav-btn primary" href="https://swap.io" target="_blank" rel="noopener">swap.io ↗</a>
+          <a class="nav-btn" href="https://x.com/swapdotio" target="_blank" rel="noopener">@swapdotio</a>
+          <a class="nav-btn" href="https://x.com/Superteam" target="_blank" rel="noopener">@Superteam</a>
+        </div>
+      </div>
+
+      <p>
+        If you work as an independent smart-contract auditor, designer, devshop, or Micro-DAO contributor on Solana, your revenue rarely arrives in a single asset. In a typical month, you might receive <strong>5 to 10 invoices</strong> across ecosystem grants, retainers, and bounties denominated in <strong>SOL, JUP, BONK, and PYTH</strong> — while your rent, payroll, and tax liabilities are strictly in <strong>USDC</strong>.
+      </p>
+
+      <p>
+        Building an autonomous AI bookkeeping agent (<strong>InvoiceSweep x402</strong>) to watch your receiving wallet and immediately convert volatile SPL payouts into USDC sounds simple on paper. In practice, traditional Web3 API billing breaks the economics of self-hosted agents before you write line one of swap logic.
+      </p>
+
+      <p>
+        Today, <a href="https://swap.io" target="_blank" rel="noopener"><strong>Swap.io</strong></a> solves this natively through its <strong>x402 Agent API (<code>https://hermes.swap.io</code>)</strong> — letting any autonomous agent buy multi-provider swap quotes and unsigned transactions <strong>per request</strong> over standard <code>HTTP 402 Payment Required</code>.
+      </p>
+
+      <!-- Embedded 84-Second 1080p Pitch Video -->
+      <figure class="video-embed">
+        <div class="video-embed-header">
+          <span>🎬 84-Second 1080p Pitch &amp; Live Demo Video (<code>swapio_x402_superteam_1080p.mp4</code>)</span>
+          <a href="https://github.com/tunguyen1993/invoicesweep-swapio-x402/releases/download/v1.0.0/swapio_x402_superteam_1080p.mp4" target="_blank" rel="noopener">⬇ Direct 1080p MP4 (10.6 MB)</a>
+        </div>
+        <video controls preload="metadata" playsinline>
+          <source src="https://github.com/tunguyen1993/invoicesweep-swapio-x402/releases/download/v1.0.0/swapio_x402_superteam_1080p.mp4" type="video/mp4" />
+          Your browser does not support HTML5 video. <a href="https://github.com/tunguyen1993/invoicesweep-swapio-x402/releases/download/v1.0.0/swapio_x402_superteam_1080p.mp4">Download the 1080p MP4 directly</a>.
+        </video>
+        <figcaption>
+          <span>Full walkthrough: Concrete scenario → Live hermes.swap.io HTTP 402 inspection → 5-step x402 flow → Unit economics</span>
+          <span>SHA-256: <code>c035e731cca6ce58...</code></span>
+        </figcaption>
+      </figure>
+
+      <hr />
+
+      <h2>1. The Concrete Use Case: InvoiceSweep x402</h2>
+
+      <p>
+        <strong>InvoiceSweep x402</strong> is a lightweight, self-hosted treasury sweeper built for Solana freelancers and small contributor guilds:
+      </p>
+
+      <ol>
+        <li><strong>Watch Incoming Transfers:</strong> The agent monitors a designated invoice address for incoming SPL token transfers against open client invoice IDs.</li>
+        <li><strong>Skip USDC Invoices Automatically ($0 API Spend):</strong> Whenever a client pays directly in <code>USDC</code> (<code>EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v</code>), InvoiceSweep marks the invoice settled and makes <strong>zero</strong> external API calls.</li>
+        <li><strong>Quote &amp; Settle Volatile SPL Tokens via Swap.io:</strong> When a non-USDC token (<code>SOL</code>, <code>JUP</code>, <code>BONK</code>, <code>PYTH</code>) lands, InvoiceSweep queries <a href="https://swap.io" target="_blank" rel="noopener">Swap.io</a>’s Hermes routing engine (<code>routhex</code>), selects the highest-output route across Jupiter, DFlow, and OKX DEX, builds an unsigned Solana swap transaction, verifies strict <code>Decimal</code> slippage bounds, and hands the unsigned transaction to the local treasury signer.</li>
+      </ol>
+
+      <hr />
+
+      <h2>2. How the Swap.io <code>x402</code> Flow Works Under the Hood</h2>
+
+      <p>
+        Instead of registering developer accounts, provisioning OAuth apps, or storing static <code>API_KEY</code> secrets in <code>.env</code> files, Swap.io prices every programmatic call natively in HTTP using the <strong>x402 protocol</strong>:
+      </p>
+
+      <h3>Step 1 — Unpaid Request Returns <code>HTTP 402 Payment Required</code></h3>
+
+      <p>
+        When InvoiceSweep sends an unauthenticated <code>POST</code> to <code>https://hermes.swap.io/v1/swap/quote</code>, Hermes responds immediately with <code>HTTP 402</code> and machine-readable payment terms (<code>x402Version: 1</code>):
+      </p>
+
+      <div class="code-wrapper">
+        <div class="code-topbar">
+          <span>POST https://hermes.swap.io/v1/swap/quote → HTTP 402 Payment Required</span>
+          <span>Captured Live: 2026-11-10T04:28:07Z</span>
+        </div>
+        <pre class="code-block"><code>{
+  "x402Version": 1,
+  "accepts": [
+    {
+      "scheme": "exact",
+      "network": "solana",
+      "maxAmountRequired": "3007",
+      "resource": "https://hermes.swap.io/v1/swap/quote",
+      "description": "Paid swap API (routhex): quote and build unsigned transactions; caller signs and broadcasts",
+      "mimeType": "application/json",
+      "payTo": "BPz2u6eoWLervxEqfpsMCVmKk7h6fEVsd7L5rvEibMfD",
+      "maxTimeoutSeconds": 60,
+      "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "extra": {
+        "feePayer": "2wKupLR9q6wXYppw8Gr2NvWxKBUqm4PPJKkQfoxHDBg4"
+      }
+    }
+  ]
+}</code></pre>
+      </div>
+
+      <p>Notice three critical engineering details from this live <code>hermes.swap.io</code> capture:</p>
+
+      <ul>
+        <li><strong>6-Decimal Atomic USDC Pricing:</strong> <code>maxAmountRequired</code> is denominated in micro-USDC (<code>"1000"</code> = <code>$0.001 USDC</code>; parameter-aware live quote calls price around <code>"3000"</code>–<code>"3007"</code> = <code>~$0.003 USDC</code>). InvoiceSweep enforces a hard <code>Decimal</code> per-call ceiling before approving any payment.</li>
+        <li><strong>Gasless API Payments (<code>extra.feePayer</code>):</strong> Swap.io’s facilitator sponsors the Solana network fee for the x402 payment itself. A dedicated agent API wallet only needs a couple dollars of <strong>USDC</strong> and <strong>zero SOL</strong>.</li>
+        <li><strong>Zero Charge on Discovery or Upstream Errors:</strong> Unpaid <code>402</code> probes and any upstream <code>4xx/5xx</code> errors never settle payment.</li>
+      </ul>
+
+      <h3>Step 2 — Pay in USDC &amp; Receive Ranked Multi-DEX Quotes</h3>
+
+      <p>
+        Using an x402 client (<code>x402-solana</code> or <code>@x402/fetch</code> + <code>@x402/svm</code>), the agent signs the exact micro-USDC payment and retries <code>POST /v1/swap/quote</code> with the <code>X-PAYMENT</code> header. Hermes returns <code>HTTP 200 OK</code> with ranked quotes (<code>quotes[0]</code> is <code>bestQuote</code>) plus a base64 <code>X-PAYMENT-RESPONSE</code> header containing the on-chain settlement signature.
+      </p>
+
+      <h3>Step 3 — Build the Unsigned Swap Transaction (<code>/v1/swap/build-tx</code>)</h3>
+
+      <p>
+        InvoiceSweep passes the winning route’s raw <code>providerQuote</code> object (<code>quoteResponse: best.providerQuote</code> — never the outer wrapper) to <code>POST https://hermes.swap.io/v1/swap/build-tx</code>. A second sub-cent x402 settlement returns the unsigned base64 Solana <code>VersionedTransaction</code> plus its own <code>X-PAYMENT-RESPONSE</code> receipt, ready for local signing and RPC broadcast.
+      </p>
+
+      <hr />
+
+      <h2>3. Why <code>x402</code> Beats API Keys &amp; SaaS Subscriptions for AI Agents</h2>
+
+      <div class="table-wrap">
+        <table class="cmp-table">
+          <thead>
+            <tr>
+              <th>Dimension</th>
+              <th>Traditional DEX API Subscriptions</th>
+              <th>Swap.io Agent API (<code>x402</code>)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Onboarding &amp; KYC</strong></td>
+              <td>Email signup, billing portal, credit card, tier quotas</td>
+              <td><strong style="color:var(--accent-emerald)">Zero signup</strong> — any agent with USDC works on boot</td>
+            </tr>
+            <tr>
+              <td><strong>Secret Hygiene</strong></td>
+              <td>Long-lived <code>API_KEY</code> in <code>.env</code> vulnerable to repo leaks</td>
+              <td><strong style="color:var(--accent-emerald)">Zero static secrets</strong> — per-call cryptographic authorization</td>
+            </tr>
+            <tr>
+              <td><strong>Idle Month Cost</strong></td>
+              <td><strong>$99.00 / month</strong> burned even if 0 invoices arrive</td>
+              <td><strong style="color:var(--accent-emerald)">$0.000000 / month</strong> when idle</td>
+            </tr>
+            <tr>
+              <td><strong>8 Invoices / Month</strong></td>
+              <td><strong>$99.00 / month</strong> (<code>$12.37</code> API overhead per swap!)</td>
+              <td><strong style="color:var(--accent-emerald)"><code>$0.016</code> to <code>$0.048 / month</code> (99.95%–99.98% savings)</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Failure Billing</strong></td>
+              <td>Quota consumed on failed calls or rate-limit retries</td>
+              <td><strong style="color:var(--accent-emerald)">Failed <code>4xx/5xx</code> requests are never charged</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        At 8 non-USDC invoices per month, a freelancer or Micro-DAO saves <strong>over $1,187 per year</strong> per self-hosted agent — and you would need tens of thousands of swaps every single month before a flat $99/mo subscription ever broke even against <a href="https://swap.io" target="_blank" rel="noopener">Swap.io</a>.
+      </p>
+
+      <hr />
+
+      <h2>Explore Swap.io &amp; x402</h2>
+
+      <ul>
+        <li><strong>Swap.io Platform:</strong> <a href="https://swap.io" target="_blank" rel="noopener">https://swap.io</a></li>
+        <li><strong>Live InvoiceSweep x402 Interactive Demo &amp; 84s HD Video:</strong> <a href="https://tunguyen1993.github.io/invoicesweep-swapio-x402/" target="_blank" rel="noopener">https://tunguyen1993.github.io/invoicesweep-swapio-x402/</a></li>
+        <li><strong>Open-Source Reference Agent &amp; Tests:</strong> <a href="https://github.com/tunguyen1993/invoicesweep-swapio-x402" target="_blank" rel="noopener">https://github.com/tunguyen1993/invoicesweep-swapio-x402</a></li>
+        <li><strong>Swap.io Hermes x402 API Discovery:</strong> <a href="https://hermes.swap.io/v1/info" target="_blank" rel="noopener">https://hermes.swap.io/v1/info</a></li>
+        <li><strong>Swap.io Agent API Quickstart:</strong> <a href="https://docs.swap.io/developer-tools/agent-api-x402/quickstart" target="_blank" rel="noopener">https://docs.swap.io/developer-tools/agent-api-x402/quickstart</a></li>
+        <li><strong>Follow on X:</strong> <a href="https://x.com/swapdotio" target="_blank" rel="noopener">@swapdotio</a> &amp; <a href="https://x.com/Superteam" target="_blank" rel="noopener">@Superteam</a></li>
+      </ul>
+
+      <!-- Companion X Video Caption Card -->
+      <div class="x-caption-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:0.85rem; flex-wrap:wrap;">
+          <div style="font-family:var(--mono); font-size:0.78rem; color:var(--accent-cyan); text-transform:uppercase; letter-spacing:0.06em;">
+            Companion X (Twitter) Video Caption (@swapdotio &amp; @Superteam)
+          </div>
+          <button class="copy-btn" id="copyXBtn" type="button">Copy X Caption</button>
+        </div>
+        <pre class="code-block" id="xCaptionText" style="background:#050811; border-radius:10px; border:1px solid var(--border-subtle); white-space:pre-wrap;">Solana freelancers &amp; micro-DAOs get paid 5–10x/month in volatile SPL tokens ($SOL, $JUP, $BONK, $PYTH) — so why burn $99/mo on idle DEX API keys just to auto-settle invoices into USDC?
+
+Meet InvoiceSweep x402 powered by @swapdotio &amp; @Superteam ⚡
+
+1️⃣ Agent watches incoming client invoices
+2️⃣ Calls hermes.swap.io/v1/swap/quote -&gt; gets HTTP 402 Payment Required
+3️⃣ Pays fractions of a cent in gasless USDC via x402 -&gt; gets ranked Routhex quotes + builds the unsigned swap tx (/v1/swap/build-tx) with on-chain X-PAYMENT-RESPONSE proof
+
+8 swaps/mo = pennies instead of a $99/mo subscription. Zero API keys. Zero .env secret leaks. Zero charge when an invoice is already in USDC.
+
+Live Demo &amp; Video: https://tunguyen1993.github.io/invoicesweep-swapio-x402/
+Article: https://tunguyen1993.github.io/invoicesweep-swapio-x402/article.html
+Try Swap.io: https://swap.io</pre>
+      </div>
+    </article>
+
+    <footer class="article-footer">
+      Published for Swap.io × Superteam Earn Bounty • <a href="https://swap.io" target="_blank" rel="noopener">swap.io</a> • <a href="./index.html">Interactive Dashboard</a> • <a href="https://github.com/tunguyen1993/invoicesweep-swapio-x402" target="_blank" rel="noopener">GitHub</a>
+    </footer>
+  </main>
+
+  <script>
+    document.getElementById("copyXBtn").addEventListener("click", function () {
+      const txt = document.getElementById("xCaptionText").innerText;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(function () {
+          const btn = document.getElementById("copyXBtn");
+          btn.textContent = "✓ Copied!";
+          setTimeout(function () { btn.textContent = "Copy X Caption"; }, 2000);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

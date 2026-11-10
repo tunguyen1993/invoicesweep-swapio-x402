@@ -7,6 +7,9 @@
 > **Live Interactive Dashboard + Embedded 84s 1080p Video Player:**  
 > **https://tunguyen1993.github.io/invoicesweep-swapio-x402/**
 >
+> **Companion Technical Deep-Dive Article (Medium / Editorial Edition):**  
+> **https://tunguyen1993.github.io/invoicesweep-swapio-x402/article.html**
+>
 > **Direct 84s 1080p Pitch Video Download (`10,628,080` bytes · SHA-256 `c035e731cca6...`):**  
 > **https://github.com/tunguyen1993/invoicesweep-swapio-x402/releases/download/v1.0.0/swapio_x402_superteam_1080p.mp4**
 >
